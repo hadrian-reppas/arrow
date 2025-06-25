@@ -25,6 +25,8 @@
 #include <utility>
 #include <vector>
 
+#include <iostream>
+
 #include "arrow/buffer.h"
 #include "arrow/dataset/dataset.h"
 #include "arrow/dataset/partition.h"
@@ -86,6 +88,14 @@ class ARROW_DS_EXPORT FileSource : public util::EqualityComparable<FileSource> {
   explicit FileSource(std::shared_ptr<io::RandomAccessFile> file,
                       Compression::type compression = Compression::UNCOMPRESSED);
 
+  FileSource(std::string path, std::shared_ptr<io::RandomAccessFile> file,
+             Compression::type compression = Compression::UNCOMPRESSED)
+      : FileSource(file, compression) {
+    std::cout << "FileSource::FileSource(std::string, std::shared_ptr<io::RandomAccessFile>) called!\n";
+    std::cout << "path: '" << path << "'\n";
+    file_info_ = fs::FileInfo(std::move(path));
+  }
+
   FileSource() : custom_open_(CustomOpen{&InvalidOpen}) {}
 
   static std::vector<FileSource> FromPaths(const std::shared_ptr<fs::FileSystem>& fs,
@@ -104,7 +114,13 @@ class ARROW_DS_EXPORT FileSource : public util::EqualityComparable<FileSource> {
   const std::string& path() const {
     static std::string buffer_path = "<Buffer>";
     static std::string custom_open_path = "<Buffer>";
-    return filesystem_ ? file_info_.path() : buffer_ ? buffer_path : custom_open_path;
+    std::cout << "FileSource::path() called!\n";
+    std::cout << "file_info_.path(): '" << file_info_.path() << "'\n";
+    std::cout << "buffer_ is " << (buffer_ ? "not null\n" : "null\n");
+    if (file_info_.path().empty()) {
+      return buffer_ ? buffer_path : custom_open_path;
+    }
+    return file_info_.path();
   }
 
   /// \brief Return the filesystem, if any. Otherwise returns nullptr

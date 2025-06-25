@@ -131,7 +131,11 @@ cdef CFileSource _make_file_source(object file, FileSystem filesystem=None, obje
     elif hasattr(file, 'read'):
         # Optimistically hope this is file-like
         c_file = get_native_file(file, False).get_random_access_file()
-        c_source = CFileSource(move(c_file))
+        if hasattr(file, '_path') and _is_path_like(file._path):
+            c_path = tobytes(_stringify_path(file._path))
+            c_source = CFileSource(move(c_path), move(c_file))
+        else:
+            c_source = CFileSource(move(c_file))
 
     else:
         raise TypeError("cannot construct a FileSource "
